@@ -1,10 +1,13 @@
 import json
 import flask
+import os
 from flask import Flask
 from flask_cors import CORS
 from datetime import datetime
+
 import main
 import utils
+from config import config
 
 app = Flask(__name__)
 CORS(app)
@@ -53,7 +56,7 @@ def loadFlightListSidebar():
     else:
         spatial_query = flask.request.get_json()
 
-        print(spatial_query['start_date'], type(spatial_query['start_date']))
+        # print(spatial_query['start_date'], type(spatial_query['start_date']))
 
         sq_start_date = datetime.strptime(spatial_query['start_date'],
                                           '%Y-%m-%dT%H:%M:%S.%fZ')
@@ -73,8 +76,8 @@ def loadFlightListSidebar():
         # flight_details = []
         flight_details = {}
         for row in results:
-            print(utils.check_intersection(row['flight_bounding_box_3857'],
-                                        spatial_query['polygon_coordinates']))
+            # print(utils.check_intersection(row['flight_bounding_box_3857'],
+            #                             spatial_query['polygon_coordinates']))
             if utils.check_intersection(row['flight_bounding_box_3857'],
                                         spatial_query['polygon_coordinates']):
 
@@ -91,7 +94,7 @@ def loadFlightListSidebar():
         response = {
             'flights': flight_details
         }
-        print(response)
+        # print(response)
         return flask.Response(response=json.dumps(response), status=200,
                               mimetype='application/json')
 
@@ -100,12 +103,21 @@ def loadFlightListSidebar():
 def setGridBoundries():
     if flask.request.is_json:
         data = flask.request.get_json()
-        print(data)
+        # print(data)
         walkPattern = True if data['data_collection_method']['pattern'] == \
                               'dh' else False
         grids, features = main.defineGrids(data['coordinate_features'],
                                            data['data_collection_method'][
                                                'start_point'], walkPattern)
+
+        # Temporary variables
+        ndvi_image = os.path.join(config['storage_path'], 'ndvi_image.tif')
+        lai_image = os.path.join(config['storage_path'], 'lai_image.tif')
+
+        features['features'] = main.getPlotIndices(features['features'], 'ndvi',
+                                                   ndvi_image)
+        features['features'] = main.getPlotIndices(features['features'], 'lai',
+                                                   lai_image)
 
         client, db_collection = utils.connectDb()
         query = {'flight_id': data['flight_id']}
@@ -119,11 +131,11 @@ def setGridBoundries():
 
         response_body = {
             'status': 'success',
-            'grids': grids,
+            # 'grids': grids,
             'flight_details': flight_details,
             'features': features
         }
-        print(response_body['grids'])
+        print(response_body['features'])
         return flask.Response(response=json.dumps(response_body), status=200,
                               mimetype='application/json')
     else:

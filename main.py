@@ -1,4 +1,8 @@
+import os
 import uuid
+import math
+import rasterio
+import numpy as np
 from random import randrange
 
 import utils
@@ -95,7 +99,8 @@ def defineGrids(data, walkStartPoint, walkPattern):
             'type': 'Feature',
             'id': grid['id'],
             'properties': {
-                'name': grid['plot_name']
+                'name': grid['plot_name'],
+                'plot_num': grid['plot_num']
             },
             'geometry': {
                 'type': 'Polygon',
@@ -103,3 +108,30 @@ def defineGrids(data, walkStartPoint, walkPattern):
             }
         })
     return grids, features
+
+def getPlotIndices(plots, veg_index, image_path, flight_type='multispec'):
+    if flight_type == 'multispec':
+        with rasterio.open(image_path) as src:
+            for p in plots:
+                plot = p['geometry']['coordinates'][0]
+                # TODO: Logically, top left and bottom right should give all the
+                #  required values
+                xmin, ymin, xmax, ymax = math.inf, math.inf, -math.inf, -math.inf
+                for x, y in plot:
+                    if xmin > x:
+                        xmin = x
+                    if ymin > y:
+                        ymin = y
+                    if xmax < x:
+                        xmax = x
+                    if ymax < y:
+                        ymax = y
+                window = src.window(xmin, ymin, xmax, ymax)
+                data = src.read(1, window=window)
+                nodata_val = src.nodata
+                if nodata_val is not None:
+                    data = np.ma.masked_equal(data, nodata_val)
+
+                plot_mean_val = round(np.mean(data), 2)
+                p['properties'][veg_index] = plot_mean_val
+    return plots
