@@ -1,6 +1,8 @@
 import os
 import uuid
-import math
+import threading
+import multiprocessing
+import concurrent.futures
 import rasterio
 import numpy as np
 from random import randrange
@@ -80,7 +82,8 @@ def defineGrids(data, walkStartPoint, walkPattern):
             tl = tr
             bl = br
 
-    grids = utils.modifyGridLayout(grids, rows, cols, walkStartPoint, walkPattern)
+    grids = utils.modifyGridLayout(grids, rows, cols, walkStartPoint,
+                                   walkPattern)
 
     order = {'tl': 0, 'tr': 1, 'br': 2, 'bl': 3}
     # order = {'tl': 3, 'tr': 0, 'br': 1, 'bl': 2}
@@ -109,29 +112,45 @@ def defineGrids(data, walkStartPoint, walkPattern):
         })
     return grids, features
 
+
 def getPlotIndices(plots, veg_index, image_path, flight_type='multispec'):
+    windows = []
     if flight_type == 'multispec':
-        with rasterio.open(image_path) as src:
+        with rasterio.open(image_path) as rasterio_dataset:
             for p in plots:
                 plot = p['geometry']['coordinates'][0]
-                # TODO: Logically, top left and bottom right should give all the
-                #  required values
-                xmin, ymin, xmax, ymax = math.inf, math.inf, -math.inf, -math.inf
-                for x, y in plot:
-                    if xmin > x:
-                        xmin = x
-                    if ymin > y:
-                        ymin = y
-                    if xmax < x:
-                        xmax = x
-                    if ymax < y:
-                        ymax = y
-                window = src.window(xmin, ymin, xmax, ymax)
-                data = src.read(1, window=window)
-                nodata_val = src.nodata
-                if nodata_val is not None:
-                    data = np.ma.masked_equal(data, nodata_val)
+                xmin, ymax = plot[0]
+                xmax, ymin = plot[2]
+                window = rasterio_dataset.window(xmin, ymin, xmax, ymax)
+                windows.append(window)
 
-                plot_mean_val = round(np.mean(data), 2)
-                p['properties'][veg_index] = plot_mean_val
+            # Read lock can be used if there is data error, else ideally
+            # there should be no problems since all windows are different
+            # regions
+
+            read_lock = threading.Lock()
+            results = []
+            def process(window):
+                with read_lock:
+                    data = rasterio_dataset.read(1, window=window)
+                    nodata_val = rasterio_dataset.nodata
+                    if nodata_val is not None:
+                        data = np.ma.masked_equal(data, nodata_val)
+                    plot_mean_val = np.mean(data)
+                    results.append(plot_mean_val)
+
+            num_workers = multiprocessing.cpu_count()
+            with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=num_workers) as executor:
+                executor.map(process, windows)
+            for p, val in zip(plots, results):
+                p['properties'][veg_index] = val
+            # data = rasterio_dataset.read(1, window=window)
+            # nodata_val = rasterio_dataset.nodata
+            # if nodata_val is not None:
+            #     data = np.ma.masked_equal(data, nodata_val)
+            #
+            # plot_mean_val = round(np.mean(data), 2)
+            # p['properties'][veg_index] = plot_mean_val
+    print([x['properties']['ndvi'] for x in plots])
     return plots

@@ -104,6 +104,8 @@ def setGridBoundries():
     if flask.request.is_json:
         data = flask.request.get_json()
         # print(data)
+        flight_data_dir = os.path.join(config['storage_path'],
+                                       data['flight_id'])
         walkPattern = True if data['data_collection_method']['pattern'] == \
                               'dh' else False
         grids, features = main.defineGrids(data['coordinate_features'],
@@ -111,6 +113,11 @@ def setGridBoundries():
                                                'start_point'], walkPattern)
 
         # Temporary variables
+        # veg_index_data_dir = os.path.join(flight_data_dir, 'veg_indices')
+        # for filename in os.listdir(veg_index_data_dir):
+        #     if '.tif' in filename:
+        #         veg_index_type = filename.split('_')[0]
+        #         veg_index_file = os.path.join(veg_index_data_dir,filename)
         ndvi_image = os.path.join(config['storage_path'], 'ndvi_image.tif')
         lai_image = os.path.join(config['storage_path'], 'lai_image.tif')
 

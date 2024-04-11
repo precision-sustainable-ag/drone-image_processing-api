@@ -42,7 +42,7 @@ def modifyGridLayout(grid, rows, cols, start_point, deadheaded=True):
                 modified_layout.extend(current_row)
                 count += cols
 
-    elif start_point == 'tr' and deadheaded:
+    elif start_point == 'tr' and not deadheaded:
         for i in range(rows):
             if i % 2 != 0:
                 modified_layout.extend(grid[count:count + cols])
@@ -55,7 +55,7 @@ def modifyGridLayout(grid, rows, cols, start_point, deadheaded=True):
                     plot['plot_name'] = f'Plot {number}'
                 modified_layout.extend(current_row)
                 count += cols
-    elif start_point == 'tr' and not deadheaded:
+    elif start_point == 'tr' and deadheaded:
         for i in range(rows):
             current_row = grid[count: (count + cols)]
             plot_numbers = reversed([x['plot_num'] for x in current_row])
