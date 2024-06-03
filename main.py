@@ -113,38 +113,40 @@ def defineGrids(data, walkStartPoint, walkPattern):
     return grids, features
 
 
-def getPlotIndices(plots, veg_index, image_path, flight_type='multispec'):
+def getPlotIndices(plots, veg_index, image_path):
     windows = []
-    if flight_type == 'multispec':
-        with rasterio.open(image_path) as rasterio_dataset:
-            for p in plots:
-                plot = p['geometry']['coordinates'][0]
-                xmin, ymax = plot[0]
-                xmax, ymin = plot[2]
-                window = rasterio_dataset.window(xmin, ymin, xmax, ymax)
-                windows.append(window)
+    # if flight_type == 'multispec':
+    with rasterio.open(image_path) as rasterio_dataset:
+        for p in plots:
+            plot = p['geometry']['coordinates'][0]
+            xmin, ymax = plot[0]
+            xmax, ymin = plot[2]
+            window = rasterio_dataset.window(xmin, ymin, xmax, ymax)
+            windows.append(window)
 
-            # Read lock can be used if there is data error, else ideally
-            # there should be no problems since all windows are different
-            # regions
+        # Read lock can be used if there is data error, else ideally
+        # there should be no problems since all windows are different
+        # regions
 
-            read_lock = threading.Lock()
-            results = []
-            def process(window):
-                with read_lock:
-                    data = rasterio_dataset.read(1, window=window)
-                    nodata_val = rasterio_dataset.nodata
-                    if nodata_val is not None:
-                        data = np.ma.masked_equal(data, nodata_val)
-                    plot_mean_val = np.mean(data)
-                    results.append(plot_mean_val)
+        read_lock = threading.Lock()
+        results = []
+        def process(window):
+            with read_lock:
+                data = rasterio_dataset.read(1, window=window)
+                nodata_val = rasterio_dataset.nodata
+                if nodata_val is not None:
+                    data = np.ma.masked_equal(data, nodata_val)
+                plot_mean_val = np.mean(data)
+                results.append(plot_mean_val)
 
-            num_workers = multiprocessing.cpu_count()
-            with concurrent.futures.ThreadPoolExecutor(
-                    max_workers=num_workers) as executor:
-                executor.map(process, windows)
-            for p, val in zip(plots, results):
-                p['properties'][veg_index] = val
+        num_workers = multiprocessing.cpu_count()
+        with concurrent.futures.ThreadPoolExecutor(
+                max_workers=num_workers) as executor:
+            executor.map(process, windows)
+        for p, val in zip(plots, results):
+            p['properties'][veg_index] = val
+    return plots
+
             # data = rasterio_dataset.read(1, window=window)
             # nodata_val = rasterio_dataset.nodata
             # if nodata_val is not None:
@@ -152,5 +154,5 @@ def getPlotIndices(plots, veg_index, image_path, flight_type='multispec'):
             #
             # plot_mean_val = round(np.mean(data), 2)
             # p['properties'][veg_index] = plot_mean_val
-    print([x['properties']['ndvi'] for x in plots])
-    return plots
+    # print([x['properties']['ndvi'] for x in plots])
+

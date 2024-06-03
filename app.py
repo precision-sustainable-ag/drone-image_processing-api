@@ -80,9 +80,8 @@ def loadFlightListSidebar():
             #                             spatial_query['polygon_coordinates']))
             if utils.check_intersection(row['flight_bounding_box_3857'],
                                         spatial_query['polygon_coordinates']):
-
-                    # and (sq_start_date <= row['mission_start_time'] <=
-                    #      sq_end_date):
+                # and (sq_start_date <= row['mission_start_time'] <=
+                #      sq_end_date):
                 # TODO: condition to check date
                 display_name = row.get('display_name', 'Name not set')
                 flight_details[row['flight_id']] = {
@@ -113,18 +112,22 @@ def setGridBoundries():
                                                'start_point'], walkPattern)
 
         # Temporary variables
-        # veg_index_data_dir = os.path.join(flight_data_dir, 'veg_indices')
-        # for filename in os.listdir(veg_index_data_dir):
-        #     if '.tif' in filename:
-        #         veg_index_type = filename.split('_')[0]
-        #         veg_index_file = os.path.join(veg_index_data_dir,filename)
-        ndvi_image = os.path.join(config['storage_path'], 'ndvi_image.tif')
-        lai_image = os.path.join(config['storage_path'], 'lai_image.tif')
+        veg_index_data_dir = os.path.join(flight_data_dir, 'veg_indices')
+        for filename in os.listdir(veg_index_data_dir):
+            if '.tif' in filename:
+                veg_index_type = filename.split('_')[0]
+                veg_index_file = os.path.join(veg_index_data_dir, filename)
+                features['features'] = main.getPlotIndices(features['features'],
+                                                           veg_index_type,
+                                                           veg_index_file)
 
-        features['features'] = main.getPlotIndices(features['features'], 'ndvi',
-                                                   ndvi_image)
-        features['features'] = main.getPlotIndices(features['features'], 'lai',
-                                                   lai_image)
+        # ndvi_image = os.path.join(config['storage_path'], 'ndvi_image.tif')
+        # lai_image = os.path.join(config['storage_path'], 'lai_image.tif')
+        #
+        # features['features'] = main.getPlotIndices(features['features'], 'ndvi',
+        #                                            ndvi_image)
+        # features['features'] = main.getPlotIndices(features['features'], 'lai',
+        #                                            lai_image)
 
         client, db_collection = utils.connectDb()
         query = {'flight_id': data['flight_id']}
@@ -132,6 +135,7 @@ def setGridBoundries():
         flight_details = {
             'flight_id': result['flight_id'],
             'orthomosaic_url': result['orthomosaic_url'],
+            # 'orthomosaic_url': f'http://localhost:8080/{result["flight_id"]}/odm_orthophoto/odm_orthophoto_cog.tif',
             'display_name': result.get('display_name', 'Name not set'),
             'mission_start_time': str(result['mission_start_time'])
         }
@@ -142,7 +146,7 @@ def setGridBoundries():
             'flight_details': flight_details,
             'features': features
         }
-        print(response_body['features'])
+        # print(response_body['features'])
         return flask.Response(response=json.dumps(response_body), status=200,
                               mimetype='application/json')
     else:
