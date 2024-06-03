@@ -8,11 +8,16 @@ from datetime import datetime
 import main
 import utils
 from config import config
+import sentry_sdk
 
 app = Flask(__name__)
 CORS(app)
 
 
+sentry_sdk.init(
+dsn="http://349d2009f4a4516e69f08acbd4baf4b8@20.169.137.216//4",
+traces_sample_rate=1.0,debug=True,environment='test'
+)
 @app.route('/ping', methods=['GET'])
 def ping():
     response_body = {
