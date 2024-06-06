@@ -165,12 +165,14 @@ def setGridBoundries():
             'display_name': result.get('display_name', 'Name not set'),
             'mission_start_time': str(result['mission_start_time']),
         }
+        field_features = data['field_features']
 
         response_body = {
             'status': 'success',
             'flight_details': flight_details,
             'features': features,
-            'grid_id': 'feature not added'
+            'grid_id': 'feature not added',
+            'field_features': field_features
         }
         logging.info({
             'grid_id': 'feature not added',
