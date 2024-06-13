@@ -8,16 +8,16 @@ from datetime import datetime
 import main
 import utils
 from config import config
-import sentry_sdk
+# import sentry_sdk
 
 app = Flask(__name__)
 CORS(app)
 
 
-sentry_sdk.init(
-dsn="http://349d2009f4a4516e69f08acbd4baf4b8@20.169.137.216//4",
-traces_sample_rate=1.0,debug=True,environment='test'
-)
+# sentry_sdk.init(
+# dsn="http://349d2009f4a4516e69f08acbd4baf4b8@20.169.137.216//4",
+# traces_sample_rate=1.0,debug=True,environment='test'
+# )
 @app.route('/ping', methods=['GET'])
 def ping():
     response_body = {
@@ -156,38 +156,6 @@ def setGridBoundries():
         # print(response_body['features'])
         return flask.Response(response=json.dumps(response_body), status=200,
                               mimetype='application/json')
-    else:
-        response_body = {
-            'status': 'failed',
-            'message': 'bad request! try again'
-        }
-        return flask.Response(response=json.dumps(response_body), status=400,
-                              mimetype='application/json')
-
-
-@app.route('/export-data', methods=['POST'])
-def exportData():
-    if flask.request.is_json:
-        data = flask.request.get_json()
-
-        #TODO add/subtract/update information according to need
-        body = [{"studyName": data["flight_details"]["display_name"],
-                 "additionalInfo": {"features": data["features"],
-                                    "flight_id": data["flight_details"]["flight_id"],
-                                    "mission_start_time": data["flight_details"]["mission_start_time"]},
-                 "commonCropName": data["field_features"]["crop_type"],
-                 "contacts": [{"name": data["field_features"]["lead_scientist"],}],
-                 }]
-        
-        curl_request = ( f"curl --include \\\n"
-            f"     --request POST \\\n"
-            f"     --header \"Content-Type: application/json\" \\\n"
-            f"     --data-binary '{json.dumps(body, indent = 2)}' \\\n"
-            f"'https://<your-brapi-instance>/brapi/v2/studies'" 
-        )
-
-        return flask.Response(response=json.dumps(curl_request), status=200, mimetype='application/json')
-    
     else:
         response_body = {
             'status': 'failed',
