@@ -1,20 +1,55 @@
+import os
 import pymongo
-from config import config
+import logging
+from logging.handlers import TimedRotatingFileHandler
 from shapely.geometry import Polygon
+from config import config
+
+
+def setup_logging():
+    log_file = config['log_file']
+    log_folder = os.path.split(log_file)[0]
+    if not os.path.exists(log_folder):
+        os.makedirs(log_folder)
+    file_handler = TimedRotatingFileHandler(log_file, when='D', interval=30)
+
+    # Set the log level and formatter
+    file_handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+
+    # Add the file handler to the root logger
+    logging.getLogger().setLevel(logging.INFO)
+    logging.getLogger().addHandler(file_handler)
 
 
 def connectDb():
-    database_details = config['database_details']
-    client = pymongo.MongoClient(database_details['host'],
-                                 username=database_details['username'],
-                                 password=database_details['password'],
-                                 authMechanism='SCRAM-SHA-256')
-    collection = client[database_details['database']][database_details[
-        'collection']]
+    try:
+        database_details = config['database_details']
+        client = pymongo.MongoClient(database_details['host'],
+                                     username=database_details['username'],
+                                     password=database_details['password'],
+                                     authMechanism='SCRAM-SHA-256')
+        collection = client[database_details['database']][database_details[
+            'collection']]
+        logging.info({
+            'service': 'database connection',
+            'message': 'connection started'
+        })
+    except Exception as e:
+        logging.error({
+            'service': 'database connection',
+            'message': e
+        })
+        return None, None
     return client, collection
 
 
 def check_intersection(source, spatialQuery):
+    logging.info({
+        'service': 'check-intersection',
+        'message': 'spatial query coordinates received'
+    })
     p1 = Polygon(source)
     for query in spatialQuery:
         p2 = Polygon(query)
@@ -24,6 +59,11 @@ def check_intersection(source, spatialQuery):
 
 
 def modifyGridLayout(grid, rows, cols, start_point, deadheaded=True):
+    logging.info({
+        'grid_id': 'feature not added',
+        'service': 'modify grid',
+        'message': 'modifying plot grid layout according to walk pattern'
+    })
     modified_layout = []
     count = 0
     if start_point == 'tl' and deadheaded:

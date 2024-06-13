@@ -6,5 +6,6 @@ config = {
         'database': 'drone-pilot',
         'collection': 'flight-information'
     },
-    'storage_path': '/Users/jbshah/_p/test/backend_storage/'
+    'storage_path': '/Users/jbshah/_p/test/backend_storage/flights/',
+    'log_file': './log_'
 }

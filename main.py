@@ -2,6 +2,7 @@ import os
 import uuid
 import threading
 import multiprocessing
+import logging
 import concurrent.futures
 import rasterio
 import numpy as np
@@ -34,6 +35,11 @@ def line_intersection(l1, l2):
 
 
 def defineGrids(data, walkStartPoint, walkPattern):
+    logging.info({
+        'grid_id': 'feature not added',
+        'service': 'grid definition',
+        'message': 'building grids from line information'
+    })
     rows = len(data['horizontal']) + 1
     cols = len(data['vertical']) + 1
     # adding the bounding box lines to the horizontal and vertical grid lines
@@ -81,7 +87,10 @@ def defineGrids(data, walkStartPoint, walkPattern):
             plot_num += 1
             tl = tr
             bl = br
-
+    logging.info({
+        'service': 'grid definition',
+        'message': 'grids built'
+    })
     grids = utils.modifyGridLayout(grids, rows, cols, walkStartPoint,
                                    walkPattern)
 
@@ -110,41 +119,63 @@ def defineGrids(data, walkStartPoint, walkPattern):
                 'coordinates': [coordinates]
             }
         })
+    logging.info({
+        'grid_id': 'feature not added',
+        'service': 'grid definition',
+        'message': 'processing complete'
+    })
     return grids, features
 
 
 def getPlotIndices(plots, veg_index, image_path):
     windows = []
-    # if flight_type == 'multispec':
-    with rasterio.open(image_path) as rasterio_dataset:
-        for p in plots:
-            plot = p['geometry']['coordinates'][0]
-            xmin, ymax = plot[0]
-            xmax, ymin = plot[2]
-            window = rasterio_dataset.window(xmin, ymin, xmax, ymax)
-            windows.append(window)
+    logging.info({
+        'grid_id': 'feature not added',
+        'service': 'plot-index data',
+        'message': f'processing started for {veg_index}'
+    })
+    try:
+        with rasterio.open(image_path) as rasterio_dataset:
+            for p in plots:
+                plot = p['geometry']['coordinates'][0]
+                xmin, ymax = plot[0]
+                xmax, ymin = plot[2]
+                window = rasterio_dataset.window(xmin, ymin, xmax, ymax)
+                windows.append(window)
 
-        # Read lock can be used if there is data error, else ideally
-        # there should be no problems since all windows are different
-        # regions
+            # Read lock can be used if there is data error, else ideally
+            # there should be no problems since all windows are different
+            # regions
 
-        read_lock = threading.Lock()
-        results = []
-        def process(window):
-            with read_lock:
-                data = rasterio_dataset.read(1, window=window)
-                nodata_val = rasterio_dataset.nodata
-                if nodata_val is not None:
-                    data = np.ma.masked_equal(data, nodata_val)
-                plot_mean_val = np.mean(data)
-                results.append(plot_mean_val)
+            read_lock = threading.Lock()
+            results = []
+            def process(window):
+                with read_lock:
+                    data = rasterio_dataset.read(1, window=window)
+                    nodata_val = rasterio_dataset.nodata
+                    if nodata_val is not None:
+                        data = np.ma.masked_equal(data, nodata_val)
+                    plot_mean_val = np.mean(data)
+                    results.append(plot_mean_val)
 
-        num_workers = multiprocessing.cpu_count()
-        with concurrent.futures.ThreadPoolExecutor(
-                max_workers=num_workers) as executor:
-            executor.map(process, windows)
-        for p, val in zip(plots, results):
-            p['properties'][veg_index] = val
+            num_workers = multiprocessing.cpu_count()
+            with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=num_workers) as executor:
+                executor.map(process, windows)
+            for p, val in zip(plots, results):
+                p['properties'][veg_index] = val
+    except Exception as e:
+        logging.error({
+            'grid_id': 'feature not added',
+            'service': 'plot-index data',
+            'message': e
+        })
+        return None
+    logging.info({
+        'grid_id': 'feature not added',
+        'service': 'plot-index data',
+        'message': f'processing complete for {veg_index}'
+    })
     return plots
 
             # data = rasterio_dataset.read(1, window=window)
