@@ -44,7 +44,7 @@ source /var/www/drone-image_processing-api/venv/bin/activate
 #/home/jbshah/drone-image_processing-api/venv/bin/python3 -m pip install -r /home/jbshah/drone-image_processing-api/requirements.txt
 
 sudo cp /var/www/drone-image_processing-api/gunicorn.service /etc/systemd/system/drone-image_processing-api.service
+sudo cp /var/www/drone-image_processing-api/file-server.service /etc/systemd/system/drone-flight-server.service
 #sudo cp /home/jbshah/drone-image_processing-api/gunicorn.service /etc/systemd/system/drone-image_processing-api.service
-
 sudo systemctl daemon-reload
 sudo systemctl start drone-image_processing-api

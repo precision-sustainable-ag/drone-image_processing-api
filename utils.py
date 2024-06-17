@@ -29,7 +29,8 @@ def connectDb():
         client = pymongo.MongoClient(database_details['host'],
                                      username=database_details['username'],
                                      password=database_details['password'],
-                                     authMechanism='SCRAM-SHA-256')
+                                     authSource=database_details['auth_source'],
+                                     authMechanism=database_details['auth_mechanism'])
         collection = client[database_details['database']][database_details[
             'collection']]
         logging.info({
