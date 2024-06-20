@@ -1,0 +1,12 @@
+[Unit]
+Description=HTTP Server for files
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/npx http-server . --cors
+Restart=always
+User=jbshah
+WorkingDirectory=/sandhills/transfer/flights/
+
+[Install]
+WantedBy=multi-user.target
