@@ -190,38 +190,6 @@ def setGridBoundries():
                               mimetype='application/json')
 
 
-@app.route('/export-data', methods=['POST'])
-def exportData():
-    if flask.request.is_json:
-        data = flask.request.get_json()
-
-        #TODO add/subtract/update information according to need
-        body = [{"studyName": data["flight_details"]["display_name"],
-                 "additionalInfo": {"features": data["features"],
-                                    "flight_id": data["flight_details"]["flight_id"],
-                                    "mission_start_time": data["flight_details"]["mission_start_time"]},
-                 "commonCropName": data["field_features"]["crop_type"],
-                 "contacts": [{"name": data["field_features"]["lead_scientist"],}],
-                 }]
-
-        curl_request = ( f"curl --include \\\n"
-            f"     --request POST \\\n"
-            f"     --header \"Content-Type: application/json\" \\\n"
-            f"     --data-binary '{json.dumps(body, indent = 2)}' \\\n"
-            f"'https://<your-brapi-instance>/brapi/v2/studies'"
-        )
-
-        return flask.Response(response=json.dumps(curl_request), status=200, mimetype='application/json')
-
-    else:
-        response_body = {
-            'status': 'failed',
-            'message': 'bad request! try again'
-        }
-        return flask.Response(response=json.dumps(response_body), status=400,
-                              mimetype='application/json')
-
-
 if __name__ == '__main__':
     utils.setup_logging()
     app.run()
