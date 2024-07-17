@@ -1,3 +1,5 @@
 .DS_Store
 .idea/*
 config.prod
+logs/*
+log_*
