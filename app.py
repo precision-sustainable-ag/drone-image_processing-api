@@ -38,7 +38,7 @@ def loadFlightListSidebar():
             'message': 'processing started'
         })
         client, db_collection = utils.connectDb()
-        query = {'orthomosaic_url': {'$exists': True}}
+        query = {'cog_path': {'$exists': True}}
         results = db_collection.find(query)
         logging.info({
             'service': 'flight-list get call',
@@ -51,7 +51,7 @@ def loadFlightListSidebar():
 
             flight_details[row['flight_id']] = {
                 'flight_id': row['flight_id'],
-                'orthomosaic_url': row['orthomosaic_url'],
+                'cog_path': row['cog_path'],
                 'display_name': display_name,
                 'mission_start_time': str(row['mission_start_time'])
             }
@@ -81,7 +81,7 @@ def loadFlightListSidebar():
         # query = {'orthomosaic_url': {'$exists': True}}
         query = {
             '$and': [
-                {'orthomosaic_url': {'$exists': True}},
+                {'cog_path': {'$exists': True}},
                 {'mission_start_time': {'$gte': sq_start_date, '$lte':
                     sq_end_date}},
             ]
@@ -104,7 +104,7 @@ def loadFlightListSidebar():
                 display_name = row.get('display_name', 'Name not set')
                 flight_details[row['flight_id']] = {
                     'flight_id': row['flight_id'],
-                    'orthomosaic_url': row['orthomosaic_url'],
+                    'cog_path': row['cog_path'],
                     'display_name': display_name,
                     'mission_start_time': str(row['mission_start_time'])
                 }
@@ -161,7 +161,7 @@ def setGridBoundries():
         })
         flight_details = {
             'flight_id': result['flight_id'],
-            'orthomosaic_url': result['orthomosaic_url'],
+            'cog_path': result['cog_path'],
             'display_name': result.get('display_name', 'Name not set'),
             'mission_start_time': str(result['mission_start_time']),
         }
