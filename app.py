@@ -101,12 +101,12 @@ def loadFlightListSidebar():
                 # and (sq_start_date <= row['mission_start_time'] <=
                 #      sq_end_date):
                 # TODO: condition to check date
-                display_name = row.get('display_name', 'Name not set')
                 flight_details[row['flight_id']] = {
                     'flight_id': row['flight_id'],
                     'cog_path': row['cog_path'],
-                    'display_name': display_name,
-                    'mission_start_time': str(row['mission_start_time'])
+                    'display_name': row.get('display_name', 'Name not set'),
+                    'mission_start_time': str(row['mission_start_time']),
+                    'research_station': row.get('research_station', 'virtual')
                 }
         response = {
             'flights': flight_details
@@ -164,6 +164,7 @@ def setGridBoundries():
             'cog_path': result['cog_path'],
             'display_name': result.get('display_name', 'Name not set'),
             'mission_start_time': str(result['mission_start_time']),
+            'research_station': result.get('research_station', 'virtual')
         }
         field_features = data['field_features']
 
