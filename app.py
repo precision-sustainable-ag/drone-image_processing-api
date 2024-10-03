@@ -9,10 +9,12 @@ from datetime import datetime
 import main
 import utils
 from config import config
+
 # import sentry_sdk
 
 app = Flask(__name__)
 CORS(app)
+
 
 # sentry_sdk.init(
 #     dsn="http://349d2009f4a4516e69f08acbd4baf4b8@20.169.137.216//4",
@@ -53,7 +55,8 @@ def loadFlightListSidebar():
                 'flight_id': row['flight_id'],
                 'cog_path': row['cog_path'],
                 'display_name': display_name,
-                'mission_start_time': str(row['mission_start_time'])
+                'mission_start_time': str(row['mission_start_time']),
+                'research_station': row.get('research_station', 'virtual')
             }
         response = {
             'flights': flight_details
@@ -123,9 +126,14 @@ def loadFlightListSidebar():
 def setGridBoundries():
     if flask.request.is_json:
         data = flask.request.get_json()
+
+        client, db_collection = utils.connectDb()
+        query = {'flight_id': data['flight_id']}
+        result = db_collection.find(query)[0]
         # print(data)
         flight_data_dir = os.path.join(config['storage_path'],
-                                       data['flight_id'])
+                                       result.get('research_station',
+                                                  'virtual'), data['flight_id'])
         walkPattern = True if data['data_collection_method']['pattern'] == \
                               'dh' else False
         logging.info({
@@ -151,9 +159,6 @@ def setGridBoundries():
                                                            veg_index_type,
                                                            veg_index_file)
 
-        client, db_collection = utils.connectDb()
-        query = {'flight_id': data['flight_id']}
-        result = db_collection.find(query)[0]
         logging.info({
             'grid_id': 'feature not added',
             'service': 'set-grid',
