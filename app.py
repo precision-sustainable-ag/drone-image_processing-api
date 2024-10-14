@@ -133,7 +133,8 @@ def setGridBoundries():
         # print(data)
         flight_data_dir = os.path.join(config['storage_path'],
                                        result.get('research_station',
-                                                  'virtual'), data['flight_id'])
+                                                  'virtual'), 'flights',
+                                       data['flight_id'])
         walkPattern = True if data['data_collection_method']['pattern'] == \
                               'dh' else False
         logging.info({
