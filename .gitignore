@@ -3,3 +3,10 @@
 config.prod
 logs/*
 log_*
+config/prod.config.yml
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz

@@ -1,0 +1,31 @@
+version: '1'
+
+services:
+  api:
+    build: 
+      context: .
+      dockerfile: dev.Dockerfile
+    ports:
+      - "127.0.0.1:5000:5000"
+    volumes:
+      - ./:/app
+    
+    environment:
+      ENVIRONMENT: dev
+      FLASK_ENV: development
+      FLASK_DEBUG: 1
+    profiles:
+      - dev
+
+  api-prod:
+    build: 
+      context: .
+      dockerfile: dev.Dockerfile
+    ports:
+      - "127.0.0.1:5000:5000"
+    environment:
+      ENVIRONMENT: prod
+      FLASK_ENV: production
+    profiles:
+      - prod
+  

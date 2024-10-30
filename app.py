@@ -25,7 +25,8 @@ CORS(app)
 @app.route('/ping', methods=['GET'])
 def ping():
     response_body = {
-        'status': 'healthy'
+        'status': 'healthy',
+        'version': '1.0.0'
     }
     # utils.connectDb()
     return flask.Response(response=json.dumps(response_body), status=200,

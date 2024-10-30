@@ -1,0 +1,9 @@
+database_details:
+  host: localhost
+  username: admin
+  password: dev_password
+  database: drone-pilot
+  collection: flight-information
+  auth_source: admin
+
+storage_path: /app/backend_storage/flights/

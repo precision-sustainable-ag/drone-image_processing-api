@@ -7,7 +7,7 @@ from config import config
 
 
 def setup_logging():
-    log_file = config['log_file']
+    log_file = config['main_log_file']
     log_folder = os.path.split(log_file)[0]
     if not os.path.exists(log_folder):
         os.makedirs(log_folder)

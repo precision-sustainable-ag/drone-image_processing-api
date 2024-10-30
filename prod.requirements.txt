@@ -1,0 +1,2 @@
+-r requirements.txt  # Include base requirements
+gunicorn==21.2.0
