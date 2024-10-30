@@ -5,11 +5,13 @@ services:
     build: 
       context: .
       dockerfile: dev.Dockerfile
+      args:
+        ENVIRONMENT: dev
+        FLASK_ENV: development
     ports:
       - "127.0.0.1:5000:5000"
     volumes:
       - ./:/app
-    
     environment:
       ENVIRONMENT: dev
       FLASK_ENV: development
@@ -21,6 +23,9 @@ services:
     build: 
       context: .
       dockerfile: dev.Dockerfile
+      args:
+        ENVIRONMENT: prod
+        FLASK_ENV: production
     ports:
       - "127.0.0.1:5000:5000"
     environment:

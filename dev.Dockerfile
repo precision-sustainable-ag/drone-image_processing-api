@@ -1,7 +1,7 @@
 FROM python:3.9-slim
 
-ARG ENVIRONMENT=dev
-ARG FLASK_ENV=development
+ARG ENVIRONMENT
+ARG FLASK_ENV
 # ENV APP_ENV=${ENVIRONMENT}
 # ENV FLASK_ENV=${FLASK_ENV}
 WORKDIR /app
@@ -23,11 +23,9 @@ COPY requirements.txt ./
 COPY *.requirements.txt ./
 RUN pip install -r ${ENVIRONMENT}.requirements.txt
 
-# Copy the rest of the application
 COPY . .
-# RUN env
-# CMD ["/bin/sh", "-c", "env"]
-# Command to run the application
+
+# dev is hotloaded, prod is "compiled"
 CMD if [ "$ENVIRONMENT" = "dev" ]; then \
         export FLASK_APP=app.py && \
         export FLASK_DEBUG=1 && \
