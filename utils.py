@@ -4,23 +4,54 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 from shapely.geometry import Polygon
 from config import config
+from datetime import datetime
 
 
 def setup_logging():
+    # Create a console handler in addition to file handler
+    console_handler = logging.StreamHandler()
+    # Set console to DEBUG level to see more detailed logs
+    console_handler.setLevel(logging.INFO)
+    
+    # Configure the log file path
     log_file = config['main_log_file']
     log_folder = os.path.split(log_file)[0]
     if not os.path.exists(log_folder):
         os.makedirs(log_folder)
+    
+    # Create file handler
     file_handler = TimedRotatingFileHandler(log_file, when='D', interval=30)
-
-    # Set the log level and formatter
     file_handler.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    file_handler.setFormatter(formatter)
-
-    # Add the file handler to the root logger
-    logging.getLogger().setLevel(logging.INFO)
-    logging.getLogger().addHandler(file_handler)
+    
+    # Create more detailed formatter for debugging
+    detailed_formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s'
+    )
+    simple_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    
+    # Use detailed formatter for console, simple for file
+    console_handler.setFormatter(detailed_formatter)
+    file_handler.setFormatter(simple_formatter)
+    
+    # Get the root logger and configure it
+    root_logger = logging.getLogger()
+    # Set root logger to DEBUG to capture everything
+    root_logger.setLevel(logging.DEBUG)
+    
+    # Remove any existing handlers to avoid duplicates
+    root_logger.handlers = []
+    
+    # Add both handlers
+    root_logger.addHandler(file_handler)
+    root_logger.addHandler(console_handler)
+    
+    # Also capture Flask's own logging
+    werkzeug_logger = logging.getLogger('werkzeug')
+    werkzeug_logger.setLevel(logging.DEBUG)
+    
+    # Capture SQLAlchemy logging if you're using it
+    # sql_logger = logging.getLogger('sqlalchemy.engine')
+    # sql_logger.setLevel(logging.INFO)
 
 
 def connectDb():

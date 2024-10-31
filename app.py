@@ -2,7 +2,7 @@ import json
 import flask
 import os
 import logging
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_cors import CORS
 from datetime import datetime
 
@@ -15,12 +15,39 @@ from config import config
 app = Flask(__name__)
 CORS(app)
 
+utils.setup_logging()
+logger = logging.getLogger(__name__)
+
 
 # sentry_sdk.init(
 #     dsn="http://349d2009f4a4516e69f08acbd4baf4b8@20.169.137.216//4",
 #     traces_sample_rate=1.0, debug=True, environment='test'
 # )
 
+@app.route('/data/<path:path>')
+def proxy_files(path):
+    # Determine storage locker service based on environment
+    environment = os.getenv('ENVIRONMENT', 'dev')
+    storage_path = config['storage_path']
+    
+    # Optional: Add security checks
+    if not path.endswith(('.tif', '.jpg', '.png')):  # restrict file types
+        return flask.Response(
+            response=json.dumps({'error': 'Invalid file type'}),
+            status=403,
+            mimetype='application/json'
+        )
+    
+    try:
+        print(f"Serving file: {os.path.join(storage_path, path)}")
+        return send_from_directory(storage_path, path)
+    except Exception as e:
+        return flask.Response(
+            response=json.dumps({'error': str(e)}),
+            status=404,
+            mimetype='application/json'
+        )
+    
 
 @app.route('/ping', methods=['GET'])
 def ping():
@@ -28,7 +55,10 @@ def ping():
         'status': 'healthy',
         'version': '1.0.0'
     }
-    # utils.connectDb()
+    client, db_collection = utils.connectDb()
+    query = {'cog_path': {'$exists': True}}
+    results = db_collection.find(query)
+    logging.info(results)
     return flask.Response(response=json.dumps(response_body), status=200,
                           mimetype='application/json')
 
@@ -177,5 +207,4 @@ def setGridBoundries():
 
 
 if __name__ == '__main__':
-    utils.setup_logging()
     app.run()

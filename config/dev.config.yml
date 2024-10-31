@@ -1,9 +1,9 @@
 database_details:
-  host: localhost
+  host: host.docker.internal
   username: admin
-  password: dev_password
+  password: yolo
   database: drone-pilot
   collection: flight-information
   auth_source: admin
 
-storage_path: /app/backend_storage/flights/
+storage_path: /app/backend_storage/

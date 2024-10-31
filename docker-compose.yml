@@ -12,12 +12,23 @@ services:
       - "127.0.0.1:5000:5000"
     volumes:
       - ./:/app
+      - /Users/jbshah/_p/storage/drone_file_server:/app/backend_storage:ro
     environment:
       ENVIRONMENT: dev
       FLASK_ENV: development
-      FLASK_DEBUG: 1
     profiles:
       - dev
+  
+  # In case we need to separate the storage locker service
+  # storage-locker-dev:
+  #   image: node:22-slim
+  #   ports:
+  #     - "8080:8080"
+  #   volumes:
+  #     - /Users/jbshah/_p/storage/drone_file_server:/app/backend_storage/flights:ro
+  #   command: npx http-server /app/backend_storage/flights --cors -p 8080
+  #   profiles:
+  #     - dev
 
   api-prod:
     build: 
@@ -26,6 +37,9 @@ services:
       args:
         ENVIRONMENT: prod
         FLASK_ENV: production
+    volumes:
+      - ./:/app
+      # - /Users/jbshah/_p/storage/drone_file_server:/app/backend_storage:ro
     ports:
       - "127.0.0.1:5000:5000"
     environment:

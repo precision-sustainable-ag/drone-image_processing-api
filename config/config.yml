@@ -1,4 +1,4 @@
 default:
-  main_log_file: ./logs/{DATE}_main.log
+  main_log_file: /app/logs/{DATE}_main.log
   database_details:
     auth_mechanism: SCRAM-SHA-256

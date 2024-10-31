@@ -30,6 +30,7 @@ CMD if [ "$ENVIRONMENT" = "dev" ]; then \
         export FLASK_APP=app.py && \
         export FLASK_DEBUG=1 && \
         export PYTHONUNBUFFERED=1 && \
+        echo $ENVIRONMENT && \
         flask run --host=0.0.0.0 --port=5000 --debug; \
     else \
         gunicorn --bind 0.0.0.0:5000 app:app; \
