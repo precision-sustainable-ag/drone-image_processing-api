@@ -2,3 +2,4 @@ default:
   main_log_file: /app/logs/{DATE}_main.log
   database_details:
     auth_mechanism: SCRAM-SHA-256
+  storage_path: /app/backend_storage/

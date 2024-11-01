@@ -5,5 +5,3 @@ database_details:
   database: drone-pilot
   collection: flight-information
   auth_source: admin
-
-storage_path: /app/backend_storage/

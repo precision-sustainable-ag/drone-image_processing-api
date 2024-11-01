@@ -15,7 +15,6 @@ services:
       - /Users/jbshah/_p/storage/drone_file_server:/app/backend_storage:ro
     environment:
       ENVIRONMENT: dev
-      FLASK_ENV: development
     profiles:
       - dev
   
@@ -36,15 +35,15 @@ services:
       dockerfile: dev.Dockerfile
       args:
         ENVIRONMENT: prod
-        FLASK_ENV: production
+        STORAGE_PATH: /Volumes/cals-research-station
     volumes:
       - ./:/app
-      # - /Users/jbshah/_p/storage/drone_file_server:/app/backend_storage:ro
+      - /Volumes/cals-research-station:/app/backend_storage:ro
     ports:
       - "127.0.0.1:5000:5000"
-    environment:
-      ENVIRONMENT: prod
-      FLASK_ENV: production
+    # environment:
+    #   ENVIRONMENT: prod
+    #   FLASK_ENV: production
     profiles:
       - prod
   

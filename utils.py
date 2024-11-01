@@ -1,33 +1,42 @@
 import os
-import pymongo
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import logging
 from logging.handlers import TimedRotatingFileHandler
 from shapely.geometry import Polygon
 from config import config
-from datetime import datetime
+
+
+def est_time(*args):
+    """Convert current time to US Eastern Time"""
+    return datetime.now(ZoneInfo("America/New_York")).timetuple()
 
 
 def setup_logging():
-    # Create a console handler in addition to file handler
-    console_handler = logging.StreamHandler()
-    # Set console to DEBUG level to see more detailed logs
-    console_handler.setLevel(logging.INFO)
-    
     # Configure the log file path
     log_file = config['main_log_file']
     log_folder = os.path.split(log_file)[0]
     if not os.path.exists(log_folder):
         os.makedirs(log_folder)
-    
-    # Create file handler
+
+    # TODO: change levels based on environment
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+
     file_handler = TimedRotatingFileHandler(log_file, when='D', interval=30)
     file_handler.setLevel(logging.INFO)
     
-    # Create more detailed formatter for debugging
+    # to get local time in the logs
+    logging.Formatter.converter = est_time
+    
     detailed_formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s'
+        '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S %Z'
     )
-    simple_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    simple_formatter = logging.Formatter(
+        '%(asctime)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S %Z'
+    )
     
     # Use detailed formatter for console, simple for file
     console_handler.setFormatter(detailed_formatter)

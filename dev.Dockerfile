@@ -1,9 +1,10 @@
 FROM python:3.9-slim
 
 ARG ENVIRONMENT
-ARG FLASK_ENV
-# ENV APP_ENV=${ENVIRONMENT}
-# ENV FLASK_ENV=${FLASK_ENV}
+ARG STORAGE_PATH
+ENV ENVIRONMENT=${ENVIRONMENT}
+ENV STORAGE_PATH=${STORAGE_PATH}
+RUN echo "environment: $ENVIRONMENT"
 WORKDIR /app
 
 # Install system dependencies including GDAL
@@ -33,6 +34,9 @@ CMD if [ "$ENVIRONMENT" = "dev" ]; then \
         echo $ENVIRONMENT && \
         flask run --host=0.0.0.0 --port=5000 --debug; \
     else \
+        echo "================" && \
+        echo $ENVIRONMENT && \
+        echo "================" && \
         gunicorn --bind 0.0.0.0:5000 app:app; \
     fi
 
