@@ -27,6 +27,7 @@ RUN pip install -r ${ENVIRONMENT}.requirements.txt
 COPY . .
 
 # dev is hotloaded, prod is "compiled"
+# TODO: bind gunicorn to localhost - blocking prod access
 CMD if [ "$ENVIRONMENT" = "dev" ]; then \
         export FLASK_APP=app.py && \
         export FLASK_DEBUG=1 && \
