@@ -33,12 +33,14 @@ services:
     build: 
       context: .
       dockerfile: dev.Dockerfile
+      platforms:
+        - "linux/amd64"
       args:
         ENVIRONMENT: prod
-        STORAGE_PATH: /Volumes/cals-research-station
+        STORAGE_PATH: /cals-research-station
     volumes:
       - ./:/app
-      - /Volumes/cals-research-station:/app/backend_storage:ro
+      - /cals-research-station:/app/backend_storage:ro
     ports:
       - "5000:5000"
     # environment:
