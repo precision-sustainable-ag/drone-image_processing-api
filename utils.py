@@ -146,3 +146,18 @@ def modifyGridLayout(grid, rows, cols, start_point, deadheaded=True):
                 count += 1
             modified_layout.extend(current_row)
     return modified_layout
+
+def formatMetadata(row):
+    return {
+        'flight_id': row['flight_id'],
+        'cog_path': row['cog_path'],
+        'mission_start_time': str(row['mission_start_time']),
+        'research_station': row.get('research_station', 'virtual'),
+        'camera_make': row['camera_make'],
+        'camera_model': row['camera_model'],
+        'file_type': row['file_type'],
+        'comments': row['comments'] if len(row['comments']) <= 256 else f"{row['comments'][:254]}..",
+        'pilot_name': row['pilot_name'],
+        'cloudiness': row['cloudiness'],
+        'display_name': row.get('display_name', 'Name not set'),
+    }

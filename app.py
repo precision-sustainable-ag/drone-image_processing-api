@@ -49,15 +49,7 @@ def loadFlightListSidebar():
         # flight_details = []
         flight_details = {}
         for row in results:
-            display_name = row.get('display_name', 'Name not set')
-
-            flight_details[row['flight_id']] = {
-                'flight_id': row['flight_id'],
-                'cog_path': row['cog_path'],
-                'display_name': display_name,
-                'mission_start_time': str(row['mission_start_time']),
-                'research_station': row.get('research_station', 'virtual')
-            }
+            flight_details[row['flight_id']] = utils.formatMetadata(row)
         response = {
             'flights': flight_details
         }
@@ -97,20 +89,12 @@ def loadFlightListSidebar():
         # flight_details = []
         flight_details = {}
         for row in results:
-            # print(utils.check_intersection(row['flight_bounding_box_3857'],
-            #                             spatial_query['polygon_coordinates']))
             if utils.check_intersection(row['flight_bounding_box_3857'],
                                         spatial_query['polygon_coordinates']):
                 # and (sq_start_date <= row['mission_start_time'] <=
                 #      sq_end_date):
                 # TODO: condition to check date
-                flight_details[row['flight_id']] = {
-                    'flight_id': row['flight_id'],
-                    'cog_path': row['cog_path'],
-                    'display_name': row.get('display_name', 'Name not set'),
-                    'mission_start_time': str(row['mission_start_time']),
-                    'research_station': row.get('research_station', 'virtual')
-                }
+                flight_details[row['flight_id']] = utils.formatMetadata(row)
         response = {
             'flights': flight_details
         }
@@ -165,13 +149,7 @@ def setGridBoundries():
             'service': 'set-grid',
             'message': 'accessing database for additional details'
         })
-        flight_details = {
-            'flight_id': result['flight_id'],
-            'cog_path': result['cog_path'],
-            'display_name': result.get('display_name', 'Name not set'),
-            'mission_start_time': str(result['mission_start_time']),
-            'research_station': result.get('research_station', 'virtual')
-        }
+        flight_details = utils.formatMetadata(result)
         field_features = data['field_features']
 
         response_body = {
