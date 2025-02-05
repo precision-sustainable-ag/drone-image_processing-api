@@ -126,9 +126,10 @@ def setGridBoundries():
             'service': 'set-grid',
             'message': 'data received'
         })
-        grids, features = main.defineGrids(data['coordinate_features'],
-                                           data['data_collection_method'][
-                                               'start_point'], walkPattern)
+        # grids, features = main.defineGrids(data['coordinate_features'],
+        #                                    data['data_collection_method'][
+        #                                        'start_point'], walkPattern)
+        features = data['coordinate_features']
 
         veg_index_data_dir = os.path.join(flight_data_dir, 'veg_indices')
         logging.info({
