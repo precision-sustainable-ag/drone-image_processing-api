@@ -7,6 +7,7 @@ import concurrent.futures
 import rasterio
 import numpy as np
 from random import randrange
+from pyproj import Transformer
 
 import utils
 
@@ -135,11 +136,13 @@ def getPlotIndices(plots, veg_index, image_path):
         'message': f'processing started for {veg_index}'
     })
     try:
+        transformer = Transformer.from_crs("EPSG:4326", "EPSG:32617")
         with rasterio.open(image_path) as rasterio_dataset:
             for p in plots:
                 plot = p['geometry']['coordinates'][0]
-                xmin, ymax = plot[0]
-                xmax, ymin = plot[2]
+
+                xmin, ymax = transformer.transform(plot[0][1], plot[0][0])
+                xmax, ymin = transformer.transform(plot[2][1], plot[2][0])
                 window = rasterio_dataset.window(xmin, ymin, xmax, ymax)
                 windows.append(window)
 
