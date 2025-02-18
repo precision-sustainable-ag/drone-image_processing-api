@@ -143,13 +143,13 @@ def setGridBoundries():
             'service': 'set-grid',
             'message': 'accessing veg index files'
         })
-        for filename in os.listdir(veg_index_data_dir):
-            if '.tif' in filename:
-                veg_index_type = filename.split('_')[0]
-                veg_index_file = os.path.join(veg_index_data_dir, filename)
-                features['features'] = main.getPlotIndices(features['features'],
-                                                           veg_index_type,
-                                                           veg_index_file)
+        # for filename in os.listdir(veg_index_data_dir):
+        #     if '.tif' in filename:
+        #         veg_index_type = filename.split('_')[0]
+        #         veg_index_file = os.path.join(veg_index_data_dir, filename)
+        #         features['features'] = main.getPlotIndices(features['features'],
+        #                                                    veg_index_type,
+        #                                                    veg_index_file)
 
         logging.info({
             'grid_id': 'feature not added',

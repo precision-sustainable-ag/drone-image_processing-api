@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   api-dev:
-    build: 
+    build:
       context: .
       dockerfile: api.Dockerfile
       args:
@@ -23,7 +23,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-  
+
   file-server:
     image: node:22-slim
     user: ${MY_UID}:${MY_GID}   # associate current user with container (needed for nfs)
@@ -41,7 +41,7 @@ services:
       retries: 3
 
   api-prod:
-    build: 
+    build:
       context: .
       dockerfile: api.Dockerfile
       user: ${MY_UID}:${MY_GID}   # associate current user with container (needed for nfs)
