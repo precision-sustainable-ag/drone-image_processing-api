@@ -155,7 +155,7 @@ def getPlotIndices(plots, veg_index, image_path):
                     nodata_val = rasterio_dataset.nodata
                     if nodata_val is not None:
                         data = np.ma.masked_equal(data, nodata_val)
-                    plot_mean_val = np.mean(data)
+                    plot_mean_val = float(np.mean(data))
                     results.append(plot_mean_val)
 
             num_workers = multiprocessing.cpu_count()
@@ -177,13 +177,4 @@ def getPlotIndices(plots, veg_index, image_path):
         'message': f'processing complete for {veg_index}'
     })
     return plots
-
-            # data = rasterio_dataset.read(1, window=window)
-            # nodata_val = rasterio_dataset.nodata
-            # if nodata_val is not None:
-            #     data = np.ma.masked_equal(data, nodata_val)
-            #
-            # plot_mean_val = round(np.mean(data), 2)
-            # p['properties'][veg_index] = plot_mean_val
-    # print([x['properties']['ndvi'] for x in plots])
 

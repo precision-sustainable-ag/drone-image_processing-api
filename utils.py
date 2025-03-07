@@ -1,4 +1,5 @@
 import os
+import sys
 import logging
 import pymongo
 from logging.handlers import TimedRotatingFileHandler
@@ -12,7 +13,6 @@ def est_time(*args):
     """Convert current time to US Eastern Time"""
     return datetime.now(ZoneInfo("America/New_York")).timetuple()
 
-
 def setup_logging():
     # Configure the log file path
     log_file = config['main_log_file']
@@ -20,49 +20,33 @@ def setup_logging():
     if not os.path.exists(log_folder):
         os.makedirs(log_folder)
 
-    # TODO: change levels based on environment
-    console_handler = logging.StreamHandler()
+    # Get the root logger and configure it
+    root_logger = logging.getLogger()
+    root_logger.handlers = []  # Remove existing handlers
+    root_logger.setLevel(logging.DEBUG)
+
+    # Console handler (will go to gunicorn error log)
+    console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.INFO)
 
+    # File handler
     file_handler = TimedRotatingFileHandler(log_file, when='D', interval=30)
     file_handler.setLevel(logging.INFO)
     
-    # to get local time in the logs
+    # Formatters
     logging.Formatter.converter = est_time
-    
     detailed_formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S %Z'
     )
-    simple_formatter = logging.Formatter(
-        '%(asctime)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S %Z'
-    )
     
-    # Use detailed formatter for console, simple for file
+    # Apply formatters
     console_handler.setFormatter(detailed_formatter)
-    file_handler.setFormatter(simple_formatter)
+    file_handler.setFormatter(detailed_formatter)
     
-    # Get the root logger and configure it
-    root_logger = logging.getLogger()
-    # Set root logger to DEBUG to capture everything
-    root_logger.setLevel(logging.DEBUG)
-    
-    # Remove any existing handlers to avoid duplicates
-    root_logger.handlers = []
-    
-    # Add both handlers
-    root_logger.addHandler(file_handler)
+    # Add handlers
     root_logger.addHandler(console_handler)
-    
-    # Also capture Flask's own logging
-    werkzeug_logger = logging.getLogger('werkzeug')
-    werkzeug_logger.setLevel(logging.DEBUG)
-    
-    # Capture SQLAlchemy logging if you're using it
-    # sql_logger = logging.getLogger('sqlalchemy.engine')
-    # sql_logger.setLevel(logging.INFO)
-
+    root_logger.addHandler(file_handler)
 
 def connectDb():
     try:
