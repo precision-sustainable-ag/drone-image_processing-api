@@ -1,7 +1,7 @@
-version: '1'
+version: '3.8'
 
 services:
-  dev:
+  api-dev:
     build: 
       context: .
       dockerfile: dev.Dockerfile
@@ -12,24 +12,34 @@ services:
       - "127.0.0.1:5000:5000"
     volumes:
       - ./:/app
-      - /Users/jbshah/_p/storage/drone_file_server:/app/backend_storage:ro
+      - ${STORAGE_PATH:-/Users/jbshah/_p/storage/drone_file_server}:/app/backend_storage:ro
     environment:
       ENVIRONMENT: dev
-    profiles:
-      - dev
+    networks:
+      - drone-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
   
-  # In case we need to separate the storage locker service
-  # storage-locker-dev:
-  #   image: node:22-slim
-  #   ports:
-  #     - "8080:8080"
-  #   volumes:
-  #     - /Users/jbshah/_p/storage/drone_file_server:/app/backend_storage/flights:ro
-  #   command: npx http-server /app/backend_storage/flights --cors -p 8080
-  #   profiles:
-  #     - dev
+  file-server:
+    image: node:22-slim
+    ports:
+      - "8080:8080"
+    volumes:
+      - ${STORAGE_PATH:-/Users/jbshah/_p/storage/drone_file_server}:/app/backend_storage:ro
+    command: npx http-server /app/backend_storage --cors -p 8080
+    networks:
+      - drone-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  prod:
+  api-prod:
     build: 
       context: .
       dockerfile: dev.Dockerfile
@@ -37,20 +47,31 @@ services:
         - "linux/amd64"
       args:
         ENVIRONMENT: prod
-        STORAGE_PATH: /cals-research-station
+        # STORAGE_PATH: /app/backend_storage
     volumes:
       - ./:/app
-      - /cals-research-station:/app/backend_storage:ro
+      # - ${PROD_STORAGE_PATH:-/cals-research-station}:/app/backend_storage:ro
     ports:
       - "5000:5000"
-    # environment:
-    #   ENVIRONMENT: prod
-    #   FLASK_ENV: production
+    environment:
+      ENVIRONMENT: prod
+      FLASK_ENV: production
     networks:
       - drone-network
-    profiles:
-      - prod
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 networks:
   drone-network:
     name: drone-network
+    external: true

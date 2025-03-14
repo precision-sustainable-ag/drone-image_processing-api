@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  api-prod:
+    image: drone-api-prod:latest
+    ports:
+      - "127.0.0.1:5000:5000"  # Only expose locally
+    environment:
+      ENVIRONMENT: prod
+      FLASK_ENV: production
+    networks:
+      - drone-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  file-server:
+    image: drone-file-server:latest
+    volumes:
+      - ${PROD_STORAGE_PATH:-/cals-research-station}:/app/backend_storage
+    ports:
+      - "127.0.0.1:8080:8080"  # Only expose locally
+    command: npx http-server /app/backend_storage --cors -p 8080
+    networks:
+      - drone-network
+    restart: unless-stopped
+
+  frontend-prod:
+    image: drone-frontend-prod:latest
+    ports:
+      # Only expose internally - Nginx will proxy
+      - "127.0.0.1:8000:80"
+    environment:
+      NODE_ENV: production
+      REACT_APP_API_URL: http://dronepilotapp.psi.ncsu.edu
+      SERVER_NAME: dronepilotapp.psi.ncsu.edu
+    networks:
+      - drone-network
+    restart: unless-stopped
+    depends_on:
+      - api-prod
+      - file-server
+
+networks:
+  drone-network:
+    name: drone-network

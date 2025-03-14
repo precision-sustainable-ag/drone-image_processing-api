@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
     libgdal-dev \
     gdal-bin \
     python3-gdal \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Set GDAL environment variables
@@ -26,8 +27,15 @@ RUN pip install -r ${ENVIRONMENT}.requirements.txt
 
 COPY . .
 
+# Create logs directory if it doesn't exist
+RUN mkdir -p /app/logs
+
+# Setup log rotation
+# RUN echo '#!/bin/sh\nfind /app/logs -type f -name "*.log" -mtime +7 -delete' > /app/cleanup_logs.sh && \
+#     chmod +x /app/cleanup_logs.sh && \
+#     echo '0 0 * * * /app/cleanup_logs.sh' | crontab -
+
 # dev is hotloaded, prod is "compiled"
-# TODO: bind gunicorn to localhost - blocking prod access
 CMD if [ "$ENVIRONMENT" = "dev" ]; then \
         export FLASK_APP=app.py && \
         export FLASK_DEBUG=1 && \
@@ -41,5 +49,6 @@ CMD if [ "$ENVIRONMENT" = "dev" ]; then \
         gunicorn --bind 0.0.0.0:5000 app:app; \
     fi
 
-# add log cleanup
-# add healthcheck
+# Add healthcheck
+# HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+#   CMD curl -f http://localhost:5000/ping || exit 1

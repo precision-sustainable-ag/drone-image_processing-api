@@ -24,31 +24,6 @@ logger = logging.getLogger(__name__)
 #     traces_sample_rate=1.0, debug=True, environment='test'
 # )
 
-@app.route('/data/<path:path>')
-def proxy_files(path):
-    # Determine storage locker service based on environment
-    environment = os.getenv('ENVIRONMENT', 'dev')
-    storage_path = config['storage_path']
-    
-    # Optional: Add security checks
-    if not path.endswith(('.tif', '.jpg', '.png')):  # restrict file types
-        return flask.Response(
-            response=json.dumps({'error': 'Invalid file type'}),
-            status=403,
-            mimetype='application/json'
-        )
-    
-    try:
-        print(f"Serving file: {os.path.join(storage_path, path)}")
-        return send_from_directory(storage_path, path)
-    except Exception as e:
-        return flask.Response(
-            response=json.dumps({'error': str(e)}),
-            status=404,
-            mimetype='application/json'
-        )
-    
-
 @app.route('/ping', methods=['GET'])
 def ping():
     response_body = {
