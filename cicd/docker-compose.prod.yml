@@ -1,10 +1,11 @@
-version: '3.8'
-
 services:
   api-prod:
     image: drone-api-prod:latest
+    user: ${MY_UID}:${MY_GID}  # associate current user with container (needed for nfs)
     ports:
-      - "127.0.0.1:5000:5000"  # Only expose locally
+      - "127.0.0.1:5000:5000"
+    volumes:
+      - ${STORAGE_PATH:-/cals-research-station}:/app/backend_storage
     environment:
       ENVIRONMENT: prod
       FLASK_ENV: production
@@ -19,11 +20,12 @@ services:
 
   file-server:
     image: drone-file-server:latest
+    user: ${MY_UID}:${MY_GID}  # associate current user with container (needed for nfs)
     volumes:
-      - ${PROD_STORAGE_PATH:-/cals-research-station}:/app/backend_storage
+      - ${STORAGE_PATH:-/cals-research-station}:/app/backend_storage
     ports:
       - "127.0.0.1:8080:8080"  # Only expose locally
-    command: npx http-server /app/backend_storage --cors -p 8080
+    # command: npx http-server /app/backend_storage --cors -p 8080
     networks:
       - drone-network
     restart: unless-stopped
@@ -36,6 +38,8 @@ services:
     environment:
       NODE_ENV: production
       REACT_APP_API_URL: http://dronepilotapp.psi.ncsu.edu
+      # REACT_APP_API_URL: http://api-prod:5000
+      # REACT_APP_FILE_SERVER_URL: http://file-server:8080
       SERVER_NAME: dronepilotapp.psi.ncsu.edu
     networks:
       - drone-network

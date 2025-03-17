@@ -4,7 +4,7 @@ services:
   api-dev:
     build: 
       context: .
-      dockerfile: dev.Dockerfile
+      dockerfile: api.Dockerfile
       args:
         ENVIRONMENT: dev
         FLASK_ENV: development
@@ -12,7 +12,7 @@ services:
       - "127.0.0.1:5000:5000"
     volumes:
       - ./:/app
-      - ${STORAGE_PATH:-/Users/jbshah/_p/storage/drone_file_server}:/app/backend_storage:ro
+      - ${STORAGE_PATH:-/Users/jbshah/_p/storage/drone_file_server}:/app/backend_storage
     environment:
       ENVIRONMENT: dev
     networks:
@@ -26,10 +26,11 @@ services:
   
   file-server:
     image: node:22-slim
+    user: ${MY_UID}:${MY_GID}   # associate current user with container (needed for nfs)
     ports:
       - "8080:8080"
     volumes:
-      - ${STORAGE_PATH:-/Users/jbshah/_p/storage/drone_file_server}:/app/backend_storage:ro
+      - ${STORAGE_PATH:-/Users/jbshah/_p/storage/drone_file_server}:/app/backend_storage
     command: npx http-server /app/backend_storage --cors -p 8080
     networks:
       - drone-network
@@ -42,7 +43,8 @@ services:
   api-prod:
     build: 
       context: .
-      dockerfile: dev.Dockerfile
+      dockerfile: api.Dockerfile
+      user: ${MY_UID}:${MY_GID}   # associate current user with container (needed for nfs)
       platforms:
         - "linux/amd64"
       args:
@@ -50,7 +52,7 @@ services:
         # STORAGE_PATH: /app/backend_storage
     volumes:
       - ./:/app
-      # - ${PROD_STORAGE_PATH:-/cals-research-station}:/app/backend_storage:ro
+      - ${STORAGE_PATH:-/cals-research-station}:/app/backend_storage
     ports:
       - "5000:5000"
     environment:

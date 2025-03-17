@@ -29,7 +29,8 @@ COPY . .
 
 # Create logs directory if it doesn't exist
 RUN mkdir -p /app/logs
-
+# allow all users to write to logs
+RUN chmod 777 /app/logs
 # Setup log rotation
 # RUN echo '#!/bin/sh\nfind /app/logs -type f -name "*.log" -mtime +7 -delete' > /app/cleanup_logs.sh && \
 #     chmod +x /app/cleanup_logs.sh && \
