@@ -5,6 +5,12 @@ ARG STORAGE_PATH
 ENV ENVIRONMENT=${ENVIRONMENT}
 ENV STORAGE_PATH=${STORAGE_PATH}
 RUN echo "environment: $ENVIRONMENT"
+
+# Set proxies
+ENV http_proxy=http://proxy.oit.ncsu.edu:3128
+ENV https_proxy=http://proxy.oit.ncsu.edu:3128
+ENV no_proxy=localhost,127.0.0.1,169.254.169.254,169.254.170.2,.ncsu.edu
+
 WORKDIR /app
 
 # Install system dependencies including GDAL

@@ -1,14 +1,32 @@
 services:
+  git-puller:
+    image: alpine/git
+    volumes:
+      - ./:/app
+    working_dir: /app
+    entrypoint: >
+      /bin/sh -c "
+        echo 'Pulling latest code from GitHub...' &&
+        git pull origin develop &&
+        echo 'GitHub pull complete!'
+      "
+    networks:
+      - drone-network
   api-prod:
-    image: drone-api-prod:latest
-    user: ${MY_UID}:${MY_GID}  # associate current user with container (needed for nfs)
+    build:
+      context: ../
+      dockerfile: api.Dockerfile
+      user: ${MY_UID}:${MY_GID}   # associate current user with container (needed for nfs)
+      platforms:
+        - "linux/amd64"
+      args:
+        ENVIRONMENT: prod
+        FLASK_ENV: production
     ports:
       - "127.0.0.1:5000:5000"
     volumes:
       - ${STORAGE_PATH:-/cals-research-station}:/app/backend_storage
-    environment:
-      ENVIRONMENT: prod
-      FLASK_ENV: production
+      - ../:/app
     networks:
       - drone-network
     restart: unless-stopped
@@ -17,36 +35,46 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    depends_on:
+      - git-puller
 
   file-server:
-    image: drone-file-server:latest
-    user: ${MY_UID}:${MY_GID}  # associate current user with container (needed for nfs)
+    build:
+      context: ../
+      dockerfile: file-server.Dockerfile
+      user: ${MY_UID}:${MY_GID}   # associate current user with container (needed for nfs)
+      platforms:
+        - "linux/amd64"
     volumes:
       - ${STORAGE_PATH:-/cals-research-station}:/app/backend_storage
     ports:
       - "127.0.0.1:8080:8080"  # Only expose locally
-    # command: npx http-server /app/backend_storage --cors -p 8080
     networks:
       - drone-network
     restart: unless-stopped
+    # TODO: Uncomment when ready to move to tile server
+    # depends_on:
+    #   - git-puller
 
   frontend-prod:
-    image: drone-frontend-prod:latest
+    build:
+      context: ../../drone-image-manipulation
+      dockerfile: frontend.Dockerfile
+      platforms:
+        - "linux/amd64"
+      args:
+        REACT_APP_API_URL: http://dronepilotapp.psi.ncsu.edu/
+        HOSTNAME: dronepilotapp.psi.ncsu.edu
     ports:
       # Only expose internally - Nginx will proxy
       - "127.0.0.1:8000:80"
-    environment:
-      NODE_ENV: production
-      REACT_APP_API_URL: http://dronepilotapp.psi.ncsu.edu
-      # REACT_APP_API_URL: http://api-prod:5000
-      # REACT_APP_FILE_SERVER_URL: http://file-server:8080
-      SERVER_NAME: dronepilotapp.psi.ncsu.edu
     networks:
       - drone-network
     restart: unless-stopped
     depends_on:
       - api-prod
       - file-server
+      - git-puller
 
 networks:
   drone-network:
