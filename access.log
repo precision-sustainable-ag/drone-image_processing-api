@@ -1,2 +1,0 @@
-172.31.0.1 - - [15/Nov/2024:22:17:51 +0000] "GET /ping HTTP/1.1" 200 41 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-172.31.0.1 - - [15/Nov/2024:22:17:51 +0000] "GET /favicon.ico HTTP/1.1" 404 207 "http://localhost:5000/ping" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"

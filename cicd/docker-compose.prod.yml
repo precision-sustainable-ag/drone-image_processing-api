@@ -16,7 +16,6 @@ services:
     build:
       context: ../
       dockerfile: api.Dockerfile
-      user: ${MY_UID}:${MY_GID}   # associate current user with container (needed for nfs)
       platforms:
         - "linux/amd64"
       args:
@@ -24,6 +23,7 @@ services:
         FLASK_ENV: production
     ports:
       - "127.0.0.1:5000:5000"
+    user: ${MY_UID}:${MY_GID}   # associate current user with container (needed for nfs)
     volumes:
       - ${STORAGE_PATH:-/cals-research-station}:/app/backend_storage
       - ../:/app
@@ -40,11 +40,11 @@ services:
 
   file-server:
     build:
-      context: ../
+      context: .
       dockerfile: file-server.Dockerfile
-      user: ${MY_UID}:${MY_GID}   # associate current user with container (needed for nfs)
       platforms:
         - "linux/amd64"
+    user: ${MY_UID}:${MY_GID}   # associate current user with container (needed for nfs)
     volumes:
       - ${STORAGE_PATH:-/cals-research-station}:/app/backend_storage
     ports:
@@ -63,7 +63,7 @@ services:
       platforms:
         - "linux/amd64"
       args:
-        REACT_APP_API_URL: http://dronepilotapp.psi.ncsu.edu/
+        REACT_APP_API_URL: http://dronepilotapp.psi.ncsu.edu
         HOSTNAME: dronepilotapp.psi.ncsu.edu
     ports:
       # Only expose internally - Nginx will proxy

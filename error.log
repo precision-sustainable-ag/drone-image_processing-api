@@ -1,4 +1,0 @@
-[2024-11-15 22:17:44 +0000] [7] [INFO] Starting gunicorn 21.2.0
-[2024-11-15 22:17:44 +0000] [7] [INFO] Listening at: http://0.0.0.0:5000 (7)
-[2024-11-15 22:17:44 +0000] [7] [INFO] Using worker: sync
-[2024-11-15 22:17:44 +0000] [8] [INFO] Booting worker with pid: 8
