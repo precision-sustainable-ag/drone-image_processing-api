@@ -1,0 +1,7 @@
+database_details:
+  host: host.docker.internal
+  username: admin
+  password: yolo
+  database: drone-pilot
+  collection: flight-information
+  auth_source: admin

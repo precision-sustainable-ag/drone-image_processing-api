@@ -1,0 +1,5 @@
+-r requirements.txt  # Include base requirements
+pytest==7.4.0
+black==23.7.0
+flake8==6.1.0
+debugpy==1.6.7

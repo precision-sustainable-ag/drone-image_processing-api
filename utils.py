@@ -1,27 +1,52 @@
 import os
-import pymongo
+import sys
 import logging
+import pymongo
 from logging.handlers import TimedRotatingFileHandler
 from shapely.geometry import Polygon
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from config import config
 
 
+def est_time(*args):
+    """Convert current time to US Eastern Time"""
+    return datetime.now(ZoneInfo("America/New_York")).timetuple()
+
 def setup_logging():
-    log_file = config['log_file']
+    # Configure the log file path
+    log_file = config['main_log_file']
     log_folder = os.path.split(log_file)[0]
     if not os.path.exists(log_folder):
         os.makedirs(log_folder)
+
+    # Get the root logger and configure it
+    root_logger = logging.getLogger()
+    root_logger.handlers = []  # Remove existing handlers
+    root_logger.setLevel(logging.DEBUG)
+
+    # Console handler (will go to gunicorn error log)
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.INFO)
+
+    # File handler
     file_handler = TimedRotatingFileHandler(log_file, when='D', interval=30)
-
-    # Set the log level and formatter
     file_handler.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    file_handler.setFormatter(formatter)
-
-    # Add the file handler to the root logger
-    logging.getLogger().setLevel(logging.INFO)
-    logging.getLogger().addHandler(file_handler)
-
+    
+    # Formatters
+    logging.Formatter.converter = est_time
+    detailed_formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S %Z'
+    )
+    
+    # Apply formatters
+    console_handler.setFormatter(detailed_formatter)
+    file_handler.setFormatter(detailed_formatter)
+    
+    # Add handlers
+    root_logger.addHandler(console_handler)
+    root_logger.addHandler(file_handler)
 
 def connectDb():
     try:
