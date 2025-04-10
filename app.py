@@ -193,6 +193,10 @@ def exportPlotImages():
     
     try:
         data = flask.request.get_json()
+
+        if not data or 'flight_id' not in data or 'features' not in data:
+            return flask.jsonify({'status': 'failed', 'message': 'Incomplete data: flight_id and features are required.'}), 400
+
         flight_id = data['flight_id']
         features = data['features']
 
@@ -206,7 +210,8 @@ def exportPlotImages():
                                 flight_id, 'odm_orthophoto', 'odm_orthophoto_cog.tif')    
 
         # Transformer for coordinate conversion (TODO: implement crs_to coordinate system)
-        transformer = Transformer.from_crs("EPSG:4326", "EPSG:32617", always_xy=True)
+        source_crs = result.get('orthophoto_source_crs', 'EPSG:32617')
+        transformer = Transformer.from_crs('EPSG:4326', source_crs, always_xy=True)
         
         zip_buffer = io.BytesIO()
 
