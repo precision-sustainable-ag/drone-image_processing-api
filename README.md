@@ -17,3 +17,10 @@ This is the codebase for the backend of drone image processing tool (app 2)
 - Get dev data from Jinam
     - Copy flight data to your local flight data storage location
     - Import the corresponding database entries to your database collection
+
+> Needs work - adding command comments for reference
+```
+docker compose --profile dev up --build --force-recreate --remove-orphans
+docker compose --profile dev up -d --build --force-recreate --remove-orphans (detached mode)
+docker compose --profile dev down
+```

@@ -1,0 +1,81 @@
+services:
+  git-puller:
+    image: alpine/git
+    volumes:
+      - ./:/app
+    working_dir: /app
+    entrypoint: >
+      /bin/sh -c "
+        echo 'Pulling latest code from GitHub...' &&
+        git pull origin develop &&
+        echo 'GitHub pull complete!'
+      "
+    networks:
+      - drone-network
+  api-prod:
+    build:
+      context: ../
+      dockerfile: api.Dockerfile
+      platforms:
+        - "linux/amd64"
+      args:
+        ENVIRONMENT: prod
+        FLASK_ENV: production
+    ports:
+      - "127.0.0.1:5000:5000"
+    user: ${MY_UID}:${MY_GID}   # associate current user with container (needed for nfs)
+    volumes:
+      - ${STORAGE_PATH:-/cals-research-station}:/app/backend_storage
+      - ../:/app
+    networks:
+      - drone-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on:
+      - git-puller
+
+  file-server:
+    build:
+      context: .
+      dockerfile: file-server.Dockerfile
+      platforms:
+        - "linux/amd64"
+    user: ${MY_UID}:${MY_GID}   # associate current user with container (needed for nfs)
+    volumes:
+      - ${STORAGE_PATH:-/cals-research-station}:/app/backend_storage
+    ports:
+      - "127.0.0.1:8080:8080"  # Only expose locally
+    networks:
+      - drone-network
+    restart: unless-stopped
+    # TODO: Uncomment when ready to move to tile server
+    # depends_on:
+    #   - git-puller
+
+  frontend-prod:
+    build:
+      context: ../../drone-image-manipulation
+      dockerfile: frontend.Dockerfile
+      platforms:
+        - "linux/amd64"
+      args:
+        REACT_APP_API_URL: http://dronepilotapp.psi.ncsu.edu
+        HOSTNAME: dronepilotapp.psi.ncsu.edu
+    ports:
+      # Only expose internally - Nginx will proxy
+      - "127.0.0.1:8000:80"
+    networks:
+      - drone-network
+    restart: unless-stopped
+    depends_on:
+      - api-prod
+      - file-server
+      - git-puller
+
+networks:
+  drone-network:
+    name: drone-network

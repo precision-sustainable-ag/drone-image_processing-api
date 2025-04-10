@@ -56,3 +56,8 @@ sudo setenforce 0
 sudo systemctl reload nginx
 sudo systemctl daemon-reload
 sudo systemctl start drone-image_processing-api
+sudo systemctl start drone-flight-server
+
+sudo rm -rf /etc/nginx/sites-enabled/dronepilotapp.psi.ncsu.edu.conf
+sudo rm -rf /etc/nginx/sites-available/dronepilotapp.psi.ncsu.edu.conf
+sudo systemctl reload nginx
