@@ -6,11 +6,6 @@ ENV ENVIRONMENT=${ENVIRONMENT}
 ENV STORAGE_PATH=${STORAGE_PATH}
 RUN echo "environment: $ENVIRONMENT"
 
-# Set proxies
-ENV http_proxy=http://proxy.oit.ncsu.edu:3128
-ENV https_proxy=http://proxy.oit.ncsu.edu:3128
-ENV no_proxy=localhost,127.0.0.1,169.254.169.254,169.254.170.2,.ncsu.edu
-
 WORKDIR /app
 
 # Install system dependencies including GDAL
@@ -41,6 +36,11 @@ RUN chmod 777 /app/logs
 # RUN echo '#!/bin/sh\nfind /app/logs -type f -name "*.log" -mtime +7 -delete' > /app/cleanup_logs.sh && \
 #     chmod +x /app/cleanup_logs.sh && \
 #     echo '0 0 * * * /app/cleanup_logs.sh' | crontab -
+
+# Set proxies
+ENV http_proxy=http://proxy.oit.ncsu.edu:3128
+ENV https_proxy=http://proxy.oit.ncsu.edu:3128
+ENV no_proxy=localhost,127.0.0.1,169.254.169.254,169.254.170.2,.ncsu.edu
 
 # dev is hotloaded, prod is "compiled"
 CMD if [ "$ENVIRONMENT" = "dev" ]; then \

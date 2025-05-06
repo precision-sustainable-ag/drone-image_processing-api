@@ -12,7 +12,7 @@ services:
       - "127.0.0.1:5000:5000"
     volumes:
       - ./:/app
-      - ${STORAGE_PATH:-/Users/jbshah/_p/storage/drone_file_server}:/app/backend_storage
+      - ${STORAGE_PATH:-/Users/jbshah/_p/test/backend_storage_v2}:/app/backend_storage
     environment:
       ENVIRONMENT: dev
     networks:
@@ -24,32 +24,47 @@ services:
       retries: 3
       start_period: 40s
 
+  # file-server:
+  #   image: node:22-slim
+  #   user: ${MY_UID}:${MY_GID}   # associate current user with container (needed for nfs)
+  #   ports:
+  #     - "8080:8080"
+  #   volumes:
+  #     - ${STORAGE_PATH:-/Users/jbshah/_p/storage/drone_file_server}:/app/backend_storage
+  #   command: npx http-server /app/backend_storage --cors -p 8080
+  #   networks:
+  #     - drone-network
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8080"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
   file-server:
-    image: node:22-slim
+    build:
+      context: ../drone-tiling-server
+      dockerfile: Dockerfile
     user: ${MY_UID}:${MY_GID}   # associate current user with container (needed for nfs)
     ports:
       - "8080:8080"
     volumes:
-      - ${STORAGE_PATH:-/Users/jbshah/_p/storage/drone_file_server}:/app/backend_storage
-    command: npx http-server /app/backend_storage --cors -p 8080
+      - ${STORAGE_PATH:-/Users/jbshah/_p/test/backend_storage_v2}:/data
+    environment:
+      - DATA_PATH=/data
+      - ALLOWED_ORIGINS=http://localhost:3000,http://dronepilotapp.psi.ncsu.edu
+    # command: python main.py
     networks:
       - drone-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   api-prod:
     build:
       context: .
       dockerfile: api.Dockerfile
-      user: ${MY_UID}:${MY_GID}   # associate current user with container (needed for nfs)
       platforms:
         - "linux/amd64"
       args:
         ENVIRONMENT: prod
         # STORAGE_PATH: /app/backend_storage
+    user: ${MY_UID}:${MY_GID}   # associate current user with container (needed for nfs)
     volumes:
       - ./:/app
       - ${STORAGE_PATH:-/cals-research-station}:/app/backend_storage

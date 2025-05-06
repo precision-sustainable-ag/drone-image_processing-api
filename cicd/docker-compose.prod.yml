@@ -38,23 +38,41 @@ services:
     depends_on:
       - git-puller
 
+  # file-server:
+  #   build:
+  #     context: .
+  #     dockerfile: file-server.Dockerfile
+  #     platforms:
+  #       - "linux/amd64"
+  #   user: ${MY_UID}:${MY_GID}   # associate current user with container (needed for nfs)
+  #   volumes:
+  #     - ${STORAGE_PATH:-/cals-research-station}:/app/backend_storage
+  #   ports:
+  #     - "127.0.0.1:8080:8080"  # Only expose locally
+  #   networks:
+  #     - drone-network
+  #   restart: unless-stopped
+  #   # TODO: Uncomment when ready to move to tile server
+  #   # depends_on:
+  #   #   - git-puller
   file-server:
     build:
-      context: .
-      dockerfile: file-server.Dockerfile
-      platforms:
-        - "linux/amd64"
+      context: ../../drone-tiling-server
+      dockerfile: Dockerfile
     user: ${MY_UID}:${MY_GID}   # associate current user with container (needed for nfs)
-    volumes:
-      - ${STORAGE_PATH:-/cals-research-station}:/app/backend_storage
     ports:
-      - "127.0.0.1:8080:8080"  # Only expose locally
+      - "8080:8080"
+    volumes:
+      - ${STORAGE_PATH:-/cals-research-station}:/data
+    environment:
+      - DATA_PATH=/data
+      - ALLOWED_ORIGINS=http://localhost:3000,http://dronepilotapp.psi.ncsu.edu
+    restart: unless-stopped
     networks:
       - drone-network
-    restart: unless-stopped
-    # TODO: Uncomment when ready to move to tile server
-    # depends_on:
-    #   - git-puller
+    depends_on:
+      - git-puller
+    
 
   frontend-prod:
     build:
