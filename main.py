@@ -7,6 +7,7 @@ import concurrent.futures
 import rasterio
 import numpy as np
 from random import randrange
+from pyproj import Transformer
 
 import utils
 
@@ -135,11 +136,22 @@ def getPlotIndices(plots, veg_index, image_path):
         'message': f'processing started for {veg_index}'
     })
     try:
+        transformer = Transformer.from_crs("EPSG:4326", "EPSG:32617", always_xy=True)
         with rasterio.open(image_path) as rasterio_dataset:
             for p in plots:
                 plot = p['geometry']['coordinates'][0]
-                xmin, ymax = plot[0]
-                xmax, ymin = plot[2]
+
+                # Project all points to the EPSG:32617 (coordinate system used by the drones)
+                # and then calculate the bounding box.
+                projected_points = [transformer.transform(lon, lat) for lon, lat in plot]
+                x_vals, y_vals = zip(*projected_points)
+                xmin, xmax = min(x_vals), max(x_vals)
+                ymin, ymax = min(y_vals), max(y_vals)
+
+                if xmin >= xmax or ymin >= ymax:
+                    logging.error(f"Invalid window bounds: xmin={xmin}, xmax={xmax}, ymin={ymin}, ymax={ymax}")
+                    continue
+
                 window = rasterio_dataset.window(xmin, ymin, xmax, ymax)
                 windows.append(window)
 

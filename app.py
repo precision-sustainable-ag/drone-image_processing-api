@@ -1,10 +1,29 @@
-import json
-import flask
 import os
+import io
+import json
 import logging
-from flask import Flask, send_from_directory
-from flask_cors import CORS
+import zipfile
 from datetime import datetime
+
+import flask
+from flask import Flask
+from flask_cors import CORS
+
+from pyproj import Transformer
+import rasterio
+from rasterio.mask import mask
+from shapely.geometry import Polygon, mapping
+import numpy as np
+from PIL import Image
+
+from flask_cors import CORS
+
+from pyproj import Transformer
+import rasterio
+from rasterio.mask import mask
+from shapely.geometry import Polygon, mapping
+import numpy as np
+from PIL import Image
 
 import main
 import utils
@@ -132,9 +151,10 @@ def setGridBoundries():
             'service': 'set-grid',
             'message': 'data received'
         })
-        grids, features = main.defineGrids(data['coordinate_features'],
-                                           data['data_collection_method'][
-                                               'start_point'], walkPattern)
+        # grids, features = main.defineGrids(data['coordinate_features'],
+        #                                    data['data_collection_method'][
+        #                                        'start_point'], walkPattern)
+        features = data['coordinate_features']
 
         veg_index_data_dir = os.path.join(flight_data_dir, 'veg_indices')
         logging.info({
@@ -180,6 +200,68 @@ def setGridBoundries():
         return flask.Response(response=json.dumps(response_body), status=400,
                               mimetype='application/json')
 
+
+@app.route('/export-images', methods=['POST'])
+def exportPlotImages():
+    if not flask.request.is_json:
+        return flask.jsonify({'status': 'failed', 'message': 'Bad request!'}), 400
+    
+    try:
+        data = flask.request.get_json()
+
+        if not data or 'flight_id' not in data or 'features' not in data:
+            return flask.jsonify({'status': 'failed', 'message': 'Incomplete data: flight_id and features are required.'}), 400
+
+        flight_id = data['flight_id']
+        features = data['features']
+
+        _, db_collection = utils.connectDb()
+        query = {'flight_id': flight_id}
+        result = db_collection.find(query)[0]
+
+        cog_tif_path = os.path.join(config['storage_path'],
+                               result.get('research_station',
+                                          'virtual'), 'flights',
+                                flight_id, 'odm_orthophoto', 'odm_orthophoto_cog.tif')    
+
+        # Transformer for coordinate conversion (TODO: implement crs_to coordinate system)
+        source_crs = result.get('orthophoto_source_crs', 'EPSG:32617')
+        transformer = Transformer.from_crs('EPSG:4326', source_crs, always_xy=True)
+        
+        zip_buffer = io.BytesIO()
+
+        with rasterio.open(cog_tif_path) as tif, zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for feature in features:
+                image_name = feature['properties'].get('name', f'plot-{len(zipf.filelist)}') + '.png'
+                coordinates = feature['geometry']['coordinates'][0]
+                
+                transformed_coordinates = [transformer.transform(lon, lat) for lon, lat in coordinates]
+                polygon = Polygon(transformed_coordinates)
+                geometry = [mapping(polygon)]
+
+                masked_tif, _ = mask(tif, geometry, crop=True)
+
+                if masked_tif.shape[0] == 4: #RGBA bands
+                    # Transpose data from (bands, height, width) to (height, width, bands)
+                    pil_data = np.transpose(masked_tif, (1, 2, 0))
+                else:
+                    # Handle first band only
+                    pil_data = masked_tif[0]
+
+                # Scale data to 0-255 if needed
+                if pil_data.dtype != np.uint8:
+                    pil_data = (pil_data / pil_data.max() * 255).astype(np.uint8)
+                img = Image.fromarray(pil_data)
+                
+                img_buffer = io.BytesIO()
+                img.save(img_buffer, format='PNG', dpi=(300, 300), quality=100)
+                zipf.writestr(image_name, img_buffer.getvalue())
+
+        zip_buffer.seek(0)
+        return flask.send_file(zip_buffer, as_attachment=True, download_name="plot_images.zip", mimetype="application/zip")
+
+    except Exception as e:
+        return flask.jsonify({'status': 'failed', 'message': str(e)}), 500
 
 if __name__ == '__main__':
     app.run()
