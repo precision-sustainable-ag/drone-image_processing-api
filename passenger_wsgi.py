@@ -1,12 +1,14 @@
 import sys
 import os
 
-# Activate your virtual environment
-venv_path = "/home/mspinega/ondemand/dev/drone-image_processing-api/venv"
-activate_this = os.path.join(venv_path, "bin", "activate")
-exec(open(activate_this).read(), dict(__file__=activate_this))
+# Path to your virtual environment's site-packages
+venv_site_packages = "/home/mspinega/ondemand/dev/drone-image_processing-api/venv/lib/python3.12/site-packages"
 
-# Add your app to the path
+# Add venv site-packages to sys.path
+sys.path.insert(0, venv_site_packages)
+
+# Add your app path
 sys.path.insert(0, "/home/mspinega/ondemand/dev/drone-image_processing-api")
 
-from app import app as application  # must be named "application"
+# Import the Flask app
+from app import app as application  # must be named 'application'
