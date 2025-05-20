@@ -1,4 +1,3 @@
 name: "drone-image_processing-api"
 category: "My Apps"
-description: "Flask backend API"
-web: true
+description: "Flask backend API hosted with Passenger"
