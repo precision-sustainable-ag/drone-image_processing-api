@@ -3,7 +3,7 @@ import os
 
 # Activate your virtual environment
 venv_path = "/home/mspinega/ondemand/dev/drone-image_processing-api/venv"
-activate_this = os.path.join(venv_path, "bin", "activate_this.py")
+activate_this = os.path.join(venv_path, "bin", "activate")
 exec(open(activate_this).read(), dict(__file__=activate_this))
 
 # Add your app to the path
