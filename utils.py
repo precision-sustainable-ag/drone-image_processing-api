@@ -1,13 +1,36 @@
 import os
 import sys
 import logging
-import pymongo
+from pymongo import MongoClient, errors
 from logging.handlers import TimedRotatingFileHandler
 from shapely.geometry import Polygon
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from pathlib import Path
 from config import config
+import certifi
 
+def _resolve_paths():
+    """
+    Rewrite Docker-style defaults (/app/...) to OOD-safe HOME paths when present.
+    Also persists the resolved values back into the loaded config dict so other
+    modules that read from config get the correct, writable paths.
+    """
+    cfg = config['default'] if 'default' in config else config
+
+    app_log_dir = os.environ.get("APP_LOG_DIR", os.path.expanduser("~/ondemand/data/backend/logs"))
+    app_storage_dir = os.environ.get("APP_STORAGE_DIR", os.path.expanduser("~/ondemand/data/backend/storage"))
+
+    # Replace paths from config.yml
+    main_log_file = cfg['main_log_file'].replace("/app/logs", app_log_dir)
+    storage_path = cfg.get('storage_path', "/app/backend_storage/").replace(
+        "/app/backend_storage/", app_storage_dir.rstrip("/") + "/"
+    )
+
+    # Persist back for others
+    cfg['main_log_file'] = main_log_file
+    cfg['storage_path'] = storage_path
+    return main_log_file, storage_path
 
 def est_time(*args):
     """Convert current time to US Eastern Time"""
@@ -15,10 +38,9 @@ def est_time(*args):
 
 def setup_logging():
     # Configure the log file path
-    log_file = config['main_log_file']
-    log_folder = os.path.split(log_file)[0]
-    if not os.path.exists(log_folder):
-        os.makedirs(log_folder)
+    log_file, _ = _resolve_paths()
+    log_folder = os.path.dirname(log_file)
+    Path(log_folder).mkdir(parents=True, exist_ok=True)
 
     # Get the root logger and configure it
     root_logger = logging.getLogger()
@@ -49,26 +71,22 @@ def setup_logging():
     root_logger.addHandler(file_handler)
 
 def connectDb():
+    dd = config['database_details']
     try:
-        database_details = config['database_details']
-        client = pymongo.MongoClient(database_details['host'],
-                                     username=database_details['username'],
-                                     password=database_details['password'],
-                                     authSource=database_details['auth_source'],
-                                     authMechanism=database_details['auth_mechanism'])
-        collection = client[database_details['database']][database_details[
-            'collection']]
-        logging.info({
-            'service': 'database connection',
-            'message': 'connection started'
-        })
-    except Exception as e:
-        logging.error({
-            'service': 'database connection',
-            'message': e
-        })
+        client = MongoClient(
+            dd["connection_string"],
+            tls=True,
+            tlsCAFile=certifi.where(),          # avoids CA issues in slim images
+            serverSelectionTimeoutMS=10000,     # 10s fail-fast
+        )
+        client.admin.command("ping")            # forces SRV + DNS + TLS + auth + selection
+        db  = client[dd["database"]]
+        col = db[dd["collection"]]
+        logging.info({'service':'database connection','message':'connected & ping ok'})
+        return client, col
+    except errors.ServerSelectionTimeoutError as e:
+        logging.error({'service':'database connection','message':f'server selection failed: {e}'})
         return None, None
-    return client, collection
 
 
 def check_intersection(source, spatialQuery):

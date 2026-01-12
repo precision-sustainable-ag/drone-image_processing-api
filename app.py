@@ -6,24 +6,18 @@ import zipfile
 from datetime import datetime
 
 import flask
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_cors import CORS
 
 from pyproj import Transformer
-import rasterio
 from rasterio.mask import mask
 from shapely.geometry import Polygon, mapping
 import numpy as np
 from PIL import Image
 
-from flask_cors import CORS
-
-from pyproj import Transformer
 import rasterio
 from rasterio.mask import mask
 from shapely.geometry import Polygon, mapping
-import numpy as np
-from PIL import Image
 
 import main
 import utils
@@ -42,6 +36,38 @@ logger = logging.getLogger(__name__)
 #     dsn="http://349d2009f4a4516e69f08acbd4baf4b8@20.169.137.216//4",
 #     traces_sample_rate=1.0, debug=True, environment='test'
 # )
+
+# -------------------------------------------------------------------
+# Frontend static file serving (React build)
+# -------------------------------------------------------------------
+
+# Absolute path to the directory containing index.html and static/
+FRONTEND_BUILD_DIR = os.path.join(os.path.dirname(__file__), '..', 'drone-image-manipulation', 'build')
+
+@app.route('/static/<path:path>')
+def serve_frontend_static(path):
+    """Serve JS/CSS/assets from the React build's static/ directory."""
+    return send_from_directory(os.path.join(FRONTEND_BUILD_DIR, 'static'), path)
+
+@app.route('/manifest.json')
+def serve_manifest():
+    return send_from_directory(FRONTEND_BUILD_DIR, 'manifest.json')
+
+@app.route('/favicon.ico')
+@app.route('/drone-favicon.ico')
+def serve_favicon():
+    return send_from_directory(FRONTEND_BUILD_DIR, 'drone-favicon.ico')
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_frontend(path):
+    logging.info({
+            'dir': FRONTEND_BUILD_DIR,
+        })
+    if path != "" and os.path.exists(os.path.join(FRONTEND_BUILD_DIR, path)):
+        return send_from_directory(FRONTEND_BUILD_DIR, path)
+    else:
+        return send_from_directory(FRONTEND_BUILD_DIR, 'index.html')
 
 @app.route('/ping', methods=['GET'])
 def ping():
