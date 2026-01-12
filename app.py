@@ -23,51 +23,33 @@ import main
 import utils
 from config import config
 
-# import sentry_sdk
+FRONTEND_BUILD_DIR = os.path.join(os.path.dirname(__file__), '..', 'drone-image-manipulation', 'build')
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    static_folder=os.path.join(FRONTEND_BUILD_DIR, "static"),
+    static_url_path="/backend/static",   # <— IMPORTANT
+)
+
 CORS(app)
 
+@app.route("/")
+def index():
+    return send_from_directory(FRONTEND_BUILD_DIR, "index.html")
+
+@app.route("/<path:path>")
+def serve_frontend(path):
+    full_path = os.path.join(FRONTEND_BUILD_DIR, path)
+
+    # Serve real build files (manifest, icons, asset-manifest, etc.)
+    if os.path.isfile(full_path):
+        return send_from_directory(FRONTEND_BUILD_DIR, path)
+
+    # SPA fallback for client-side routes
+    return send_from_directory(FRONTEND_BUILD_DIR, "index.html")
 utils.setup_logging()
 logger = logging.getLogger(__name__)
 
-
-# sentry_sdk.init(
-#     dsn="http://349d2009f4a4516e69f08acbd4baf4b8@20.169.137.216//4",
-#     traces_sample_rate=1.0, debug=True, environment='test'
-# )
-
-# -------------------------------------------------------------------
-# Frontend static file serving (React build)
-# -------------------------------------------------------------------
-
-# Absolute path to the directory containing index.html and static/
-FRONTEND_BUILD_DIR = os.path.join(os.path.dirname(__file__), '..', 'drone-image-manipulation', 'build')
-
-@app.route('/static/<path:path>')
-def serve_frontend_static(path):
-    """Serve JS/CSS/assets from the React build's static/ directory."""
-    return send_from_directory(os.path.join(FRONTEND_BUILD_DIR, 'static'), path)
-
-@app.route('/manifest.json')
-def serve_manifest():
-    return send_from_directory(FRONTEND_BUILD_DIR, 'manifest.json')
-
-@app.route('/favicon.ico')
-@app.route('/drone-favicon.ico')
-def serve_favicon():
-    return send_from_directory(FRONTEND_BUILD_DIR, 'drone-favicon.ico')
-
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve_frontend(path):
-    logging.info({
-            'dir': FRONTEND_BUILD_DIR,
-        })
-    if path != "" and os.path.exists(os.path.join(FRONTEND_BUILD_DIR, path)):
-        return send_from_directory(FRONTEND_BUILD_DIR, path)
-    else:
-        return send_from_directory(FRONTEND_BUILD_DIR, 'index.html')
 
 @app.route('/ping', methods=['GET'])
 def ping():
@@ -82,6 +64,25 @@ def ping():
     return flask.Response(response=json.dumps(response_body), status=200,
                           mimetype='application/json')
 
+
+TILER_INTERNAL_URL = os.getenv("TILER_INTERNAL_URL", "http://127.0.0.1:8000")
+
+@app.route("/tiler/<path:subpath>", methods=["GET"])
+def proxy_tiler(subpath):
+    upstream = f"{TILER_INTERNAL_URL}/{subpath}"
+    resp = requests.get(
+        upstream,
+        params=request.args,
+        stream=True,
+        timeout=60,
+    )
+
+    excluded = {"content-encoding", "content-length", "transfer-encoding", "connection"}
+    headers = [(k, v) for k, v in resp.headers.items() if k.lower() not in excluded]
+
+    return Response(resp.iter_content(chunk_size=1024 * 64),
+                    status=resp.status_code,
+                    headers=headers)
 
 @app.route('/flight-list', methods=['GET', 'POST'])
 def loadFlightListSidebar():
